@@ -1,0 +1,34 @@
+{
+	"name": "potree-core",
+	"version": "1.0.7",
+	"description": "Potree wrapper for threejs applications",
+	"main": "build/potree.module.js",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/tentone/potree-core.git"
+	},
+	"scripts": {
+		"start": "npm run build && npm run serve",
+		"serve": "http-server .",
+		"build": "rollup -c && npm run closure",
+		"docs": "jsdoc -d docs source",
+		"closure": "java -jar node_modules/google-closure-compiler-java/compiler.jar --compilation_level SIMPLE --warning_level QUIET --formatting SINGLE_QUOTES --language_in ECMASCRIPT_2017 --language_out ECMASCRIPT_2017 --js build/potree.js --js_output_file build/potree.min.js",
+		"pub": "npm run build && npm publish --access public ."
+	},
+	"keywords": [
+		"three",
+		"potree",
+		"3d",
+		"webgl"
+	],
+	"author": "Tentone",
+	"license": "MIT",
+	"dependencies": {},
+	"devDependencies": {
+		"http-server": "0.11.1",
+		"google-closure-compiler": "^20190301.0.0",
+		"jsdoc": "^3.5.0",
+		"rollup": "^1.0.0",
+		"rollup-plugin-strip": "^1.2.1"
+	}
+}
