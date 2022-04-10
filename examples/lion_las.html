@@ -41,7 +41,7 @@
 	import * as THREE from "../libs/three.js/build/three.module.js";
 	// import { ColladaLoader } from "../libs/three.js/loaders/ColladaLoader.js"
 	import { FBXLoader } from "../libs/three.js/loaders/FBXLoader.js"
-	
+	const loaderTexture = new THREE.TextureLoader();
 		window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
 		
 		viewer.setEDLEnabled(true);
@@ -112,6 +112,8 @@
 			viewer.scene.scene.add(pt)
 
 			const loader = new FBXLoader();
+			const texture = loaderTexture.load('../pointclouds/test.png');
+
 			loader.load("../pointclouds/fbx/pizdaslona.fbx",(object) => {
 					// object.traverse(function (child) {
 					//     if ((child as THREE.Mesh).isMesh) {
@@ -122,19 +124,52 @@
 					//     }
 					// })
 					// object.scale.set(.01, .01, .01)
-					mixer = new THREE.AnimationMixer( object );
 
+
+					let arr = [];
+					object.traverse( function ( child ) {
+
+					if ( child.isMesh ) {
+
+						// const oldMat = child.material;
+						// console.log(child)
+						let pt = new THREE.Points(
+							child.geometry,
+							new THREE.PointsMaterial({
+								color: 0x00afaf,
+								size: 1
+						}));
+						arr.push(pt)
+
+						// switch the material here - you'll need to take the settings from the 
+						//original material, or create your own new settings, something like:
+						const oldMat = child.material;
+						child.localToWorld(child.geometry.attributes.position)
+						child.material.wireframe = true; 
+						child.material.needsUpdate = true;
+						// console.log(child, object)
+
+					}
+
+					} );
+
+					mixer = new THREE.AnimationMixer( object );
 					const action = mixer.clipAction( object.animations[ 0 ] );
 					action.play();
-					// var pt = new THREE.Points(
+					// var pt2 = new THREE.Points(
 					// 	object,
 					// 	new THREE.PointsMaterial({
 					// 		color: 0x00afaf,
 					// 		size: 0.3
 					// 	}));
-					//viewer.scene.scene.add(pt)
+					
 					
 					viewer.scene.scene.add(object)
+					// arr.forEach(element => {
+					// 	viewer.scene.scene.add(element)	
+					// });
+					
+
 				},
 				(xhr) => {
 					console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
@@ -143,7 +178,7 @@
 					console.log(error)
 				}
 			);
-
+			// let renderer = new THREE.WebGLRenderer()
 			function animate() {
 
 				requestAnimationFrame( animate );
@@ -152,7 +187,7 @@
 
 				if ( mixer ) mixer.update( delta );
 
-				//renderer.render( scene, camera );
+				// renderer.render( viewer.scene.scene, viewer.scene.cameraAnimations );
 
 				//stats.update();
 
@@ -204,6 +239,7 @@
 			viewer.scene.scene.add(ambient);
 
 			animate();
+			console.log("TEST")
 	</script>
 	
 	
