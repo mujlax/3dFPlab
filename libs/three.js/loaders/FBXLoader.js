@@ -42,7 +42,7 @@ import {
 	VectorKeyframeTrack,
 	sRGBEncoding
 } from '../build/three.module.js';
-import * as fflate from '../libs/fflate.module.min.js';
+import { Inflate } from '../libs/inflate.module.min.js';
 import { NURBSCurve } from '../curves/NURBSCurve.js';
 
 /**
@@ -869,17 +869,11 @@ var FBXLoader = ( function () {
 
 				if ( node.userData.transformData ) {
 
-					if ( node.parent ) {
-
-						node.userData.transformData.parentMatrix = node.parent.matrix;
-						node.userData.transformData.parentMatrixWorld = node.parent.matrixWorld;
-
-					}
+					if ( node.parent ) node.userData.transformData.parentMatrixWorld = node.parent.matrix;
 
 					var transform = generateTransform( node.userData.transformData );
 
 					node.applyMatrix4( transform );
-					node.updateWorldMatrix();
 
 				}
 
@@ -3616,14 +3610,14 @@ var FBXLoader = ( function () {
 
 					}
 
-					if ( typeof fflate === 'undefined' ) {
+					if ( typeof Inflate === 'undefined' ) {
 
-						console.error( 'THREE.FBXLoader: External library fflate.min.js required.' );
+						console.error( 'THREE.FBXLoader: External library Inflate.min.js required, obtain or import from https://github.com/imaya/zlib.js' );
 
 					}
 
-					var data = fflate.unzlibSync( new Uint8Array( reader.getArrayBuffer( compressedLength ) ) ); // eslint-disable-line no-undef
-					var reader2 = new BinaryReader( data.buffer );
+					var inflate = new Inflate( new Uint8Array( reader.getArrayBuffer( compressedLength ) ) ); // eslint-disable-line no-undef
+					var reader2 = new BinaryReader( inflate.decompress().buffer );
 
 					switch ( type ) {
 
@@ -4033,7 +4027,6 @@ var FBXLoader = ( function () {
 		var lRotationPivotM = new Matrix4();
 
 		var lParentGX = new Matrix4();
-		var lParentLX = new Matrix4();
 		var lGlobalT = new Matrix4();
 
 		var inheritType = ( transformData.inheritType ) ? transformData.inheritType : 0;
@@ -4061,7 +4054,6 @@ var FBXLoader = ( function () {
 			var array = transformData.postRotation.map( MathUtils.degToRad );
 			array.push( transformData.eulerOrder );
 			lPostRotationM.makeRotationFromEuler( tempEuler.fromArray( array ) );
-			lPostRotationM.invert();
 
 		}
 
@@ -4074,44 +4066,37 @@ var FBXLoader = ( function () {
 		if ( transformData.rotationPivot ) lRotationPivotM.setPosition( tempVec.fromArray( transformData.rotationPivot ) );
 
 		// parent transform
-		if ( transformData.parentMatrixWorld ) {
+		if ( transformData.parentMatrixWorld ) lParentGX = transformData.parentMatrixWorld;
 
-			lParentLX.copy( transformData.parentMatrix );
-			lParentGX.copy( transformData.parentMatrixWorld );
-
-		}
-
-		var lLRM = new Matrix4().copy( lPreRotationM ).multiply( lRotationM ).multiply( lPostRotationM );
 		// Global Rotation
+		var lLRM = lPreRotationM.multiply( lRotationM ).multiply( lPostRotationM );
 		var lParentGRM = new Matrix4();
-		lParentGRM.extractRotation( lParentGX );
+		lParentGX.extractRotation( lParentGRM );
 
 		// Global Shear*Scaling
 		var lParentTM = new Matrix4();
 		lParentTM.copyPosition( lParentGX );
 
 		var lParentGSM = new Matrix4();
-		var lParentGRSM = new Matrix4().copy( lParentTM ).invert().multiply( lParentGX );
-		lParentGSM.copy( lParentGRM ).invert().multiply( lParentGRSM );
-		var lLSM = lScalingM;
+		lParentGSM.copy( lParentGRM ).invert().multiply( lParentGX );
 
 		var lGlobalRS = new Matrix4();
 
 		if ( inheritType === 0 ) {
 
-			lGlobalRS.copy( lParentGRM ).multiply( lLRM ).multiply( lParentGSM ).multiply( lLSM );
+			lGlobalRS.copy( lParentGRM ).multiply( lLRM ).multiply( lParentGSM ).multiply( lScalingM );
 
 		} else if ( inheritType === 1 ) {
 
-			lGlobalRS.copy( lParentGRM ).multiply( lParentGSM ).multiply( lLRM ).multiply( lLSM );
+			lGlobalRS.copy( lParentGRM ).multiply( lParentGSM ).multiply( lLRM ).multiply( lScalingM );
 
 		} else {
 
-			var lParentLSM = new Matrix4().scale( new Vector3().setFromMatrixScale( lParentLX ) );
-			var lParentLSM_inv = new Matrix4().copy( lParentLSM ).invert();
-			var lParentGSM_noLocal = new Matrix4().copy( lParentGSM ).multiply( lParentLSM_inv );
+			var lParentLSM_inv = new Matrix4();
+			lParentLSM_inv.copy( lScalingM ).invert();
+			var lParentGSM_noLocal = new Matrix4().multiply( lParentGSM ).multiply( lParentLSM_inv );
 
-			lGlobalRS.copy( lParentGRM ).multiply( lLRM ).multiply( lParentGSM_noLocal ).multiply( lLSM );
+			lGlobalRS.copy( lParentGRM ).multiply( lLRM ).multiply( lParentGSM_noLocal ).multiply( lScalingM );
 
 		}
 
@@ -4128,10 +4113,7 @@ var FBXLoader = ( function () {
 		var lGlobalTranslation = new Matrix4().copy( lParentGX ).multiply( lLocalTWithAllPivotAndOffsetInfo );
 		lGlobalT.copyPosition( lGlobalTranslation );
 
-		lTransform = new Matrix4().copy( lGlobalT ).multiply( lGlobalRS );
-
-		// from global to local
-		lTransform.premultiply( lParentGX.invert() );
+		lTransform = new Matrix4().multiply( lGlobalT ).multiply( lGlobalRS );
 
 		return lTransform;
 
