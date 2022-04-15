@@ -1,7 +1,7 @@
 /**
- *
- * @param {*} viewer
- * @returns
+ * Начальная настройка viewer
+ * @param {Potree.Viewer} viewer - главный viewer
+ * @returns viewer
  */
 export default function setViewerSettings(viewer) {
   viewer.loadGUI(() => {
@@ -13,10 +13,9 @@ export default function setViewerSettings(viewer) {
   viewer.setFOV(90);
   viewer.setPointBudget(1_000_000);
   viewer.loadSettingsFromURL();
-  viewer.setMinNodeSize(100);
+  viewer.setMinNodeSize(250);
   viewer.setControls(viewer.fpControls);
   viewer.fpControls.lockElevation = true;
-  viewer.setMoveSpeed(1);
   viewer.setDescription("Loading Octree of LAS files");
   return viewer;
 }

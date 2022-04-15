@@ -1,5 +1,5 @@
 /**
- *
+ * Загрузчик THREE.js объектов и добавление на сцену
  * @param {*} loader - Любой loader, имеющий load из библиотеки THREE.js. Например FBXLoader()
  * @param {Potree.Viewer} scene - viwer.scene.scene из Potree.Viewer чтобы добавить объект в сцену
  * @param {string} url - Путь до объекта
