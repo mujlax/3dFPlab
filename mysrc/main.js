@@ -8,6 +8,7 @@ const clock = new THREE.Clock();
 window.viewer = new Potree.Viewer(
   document.getElementById("potree_render_area")
 );
+let vector = new THREE.Vector3(0, 0, 0);
 viewer = setViewerSettings(viewer);
 let scene = viewer.scene.scene;
 let mixer, mixer2;
@@ -19,47 +20,52 @@ function animate() {
   if (mixer) mixer.update(delta);
 
   if (mixer2) mixer2.update(delta);
+  viewer.setMoveSpeed(20);
+  console.log("СПИД: ", viewer.getMoveSpeed());
 }
 
 ObjectLoader(new FBXLoader(), scene, "../pointclouds/fbx/man.fbx", (object) => {
-  object.position.z = 5
-  object.position.y = 75
-  object.position.x = 10
-  object.rotation.x = 77
-  object.rotation.y = -3
-  object.scale.set(2.6,2.6,2.6)
+  object.position.z = 5;
+  object.position.y = 75;
+  object.position.x = 10;
+  object.rotation.x = 77;
+  object.rotation.y = -3;
+  object.scale.set(2.6, 2.6, 2.6);
 
   mixer = new THREE.AnimationMixer(object);
   const action = mixer.clipAction(object.animations[0]);
   action.play();
 });
 
-ObjectLoader(new FBXLoader(), scene, "../pointclouds/fbx/Dance_Hip_Hop_4.fbx", (object) => {
-      object.position.z = 5 //height
-      object.position.y = -175 
-      object.position.x = 15
-      object.rotation.x = 77
-      object.rotation.y = -3 //Z
-      object.position.x = 0;
-      object.scale.set(0.04,0.04,0.04)
-  mixer2 = new THREE.AnimationMixer(object);
-  const action = mixer2.clipAction(object.animations[0]);
-  action.play();
-});
+ObjectLoader(
+  new FBXLoader(),
+  scene,
+  "../pointclouds/fbx/Dance_Hip_Hop_4.fbx",
+  (object) => {
+    object.position.z = 5; //height
+    object.position.y = -175;
+    object.position.x = 15;
+    object.rotation.x = 77;
+    object.rotation.y = -3; //Z
+    object.position.x = 0;
+    object.scale.set(0.04, 0.04, 0.04);
+    mixer2 = new THREE.AnimationMixer(object);
+    const action = mixer2.clipAction(object.animations[0]);
+    action.play();
+  }
+);
 
-
-
-Potree.loadPointCloud("../pointclouds/Cor_1/cloud.js", "lion", function(e){
+Potree.loadPointCloud("../pointclouds/Cor_1/cloud.js", "lion", function (e) {
   viewer.scene.addPointCloud(e.pointcloud);
-  
+
   let material = e.pointcloud.material;
   material.size = 1;
   material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
-  
+
   e.pointcloud.position.x += 3;
   e.pointcloud.position.y -= 3;
   e.pointcloud.position.z += 4;
-  
+
   //viewer.fitToScreen();
 });
 
